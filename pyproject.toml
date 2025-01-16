@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "chatbotproxy"
+version = "0.1.0"
+description = ""
+authors = ["Martin <m.starman@live.comdd>"]
+readme = "README.md"
+
+packages = [{ include = "ChatBotProxy"}]
+
+[tool.poetry.scripts]
+ChatBotProxy = "ChatBotProxy:cli"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+click = "^8.1.8"
+requests = "^2.32.3"
+transformers = "^4.48.0"
+sentence-transformers = "^3.3.1"
+faiss-cpu = "^1.9.0.post1"
+beautifulsoup4 = "^4.12.3"
+html2text = "^2024.2.26"
+flask = "^3.1.0"
+gunicorn = "^23.0.0"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
