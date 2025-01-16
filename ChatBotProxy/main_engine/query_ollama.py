@@ -6,8 +6,7 @@ from sentence_transformers import SentenceTransformer
 
 __all__ = ['query_ollama']
 
-from ChatBotProxy.main_engine.import_docu import docu_root
-
+from ChatBotProxy.main_engine.import_docu import docu_root, get_embedding_model
 
 def search_index(query, index, model, doc_text_links: list[str], top_k=10):
     """Search the FAISS index with a query and return top_k results."""
@@ -20,8 +19,8 @@ def search_index(query, index, model, doc_text_links: list[str], top_k=10):
     return results
 
 
-def _build_prompt(question: str, model_name: str, doc_text_links: list[str]):
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+def _build_prompt(question: str, model_name: str, embedding_model:str, doc_text_links: list[str]):
+    model = get_embedding_model(embedding_model)
     # Save the index for later use
     index = faiss.read_index(os.path.join(docu_root(), "faiss_index.bin"))
 
@@ -34,10 +33,10 @@ def _build_prompt(question: str, model_name: str, doc_text_links: list[str]):
     return {"prompt": prompt, "model": model_name, "stream": False}
 
 
-def query_ollama(question, model_name, doc_text_links: list[str]):
+def query_ollama(question, model_name, embedding_model, doc_text_links: list[str]):
     response = requests.post(
         "http://localhost:11434/api/generate",
-        json=_build_prompt(question, model_name, doc_text_links)
+        json=_build_prompt(question, model_name, embedding_model, doc_text_links)
     )
     try:
         print(response.json().get("response"))

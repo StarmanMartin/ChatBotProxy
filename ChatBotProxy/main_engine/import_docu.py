@@ -10,8 +10,10 @@ from bs4 import BeautifulSoup
 import html2text
 from sentence_transformers import SentenceTransformer
 
-__all__ = ['fetch_documents', 'get_document_links', 'docu_root']
+__all__ = ['fetch_documents', 'get_document_links', 'docu_root', 'get_embedding_model']
 
+
+_MODEL = None
 _DOCU_LINKS = []
 def _get_all_website_links(base_url: str, base_path: str = '/', urls: list | None = None, idx: int = 0):
     if urls is None:
@@ -82,7 +84,7 @@ def fetch_documents(url: str, base_path: str, embedding_model: str):
         f.write(json.dumps(index))
 
     # Load pre-trained model
-    model = SentenceTransformer(embedding_model)  # Lightweight and efficient
+    model = get_embedding_model(embedding_model)# Lightweight and efficient
 
     # Generate embeddings
     embeddings = model.encode(text_chunks, convert_to_tensor=True)
@@ -109,3 +111,10 @@ def get_document_links(url: str, base_path: str, embedding_model: str):
         else:
             fetch_documents(url, base_path, embedding_model)
     return _DOCU_LINKS
+
+
+def get_embedding_model(embedding_model: str):
+    global _MODEL
+    if _MODEL is None:
+        _MODEL = SentenceTransformer(embedding_model)
+    return _MODEL

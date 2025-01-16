@@ -36,7 +36,7 @@ def handle_post():
     if not data:
         return jsonify({"error": "No JSON payload provided"}), 400
     document_links = get_document_links(config['url'], config['path'], config['embedding_model'])
-    return jsonify(data | {"answer": query_ollama(data['question'], config['llm'], document_links)}), 200
+    return jsonify(data | {"answer": query_ollama(data['question'], config['llm'], config['embedding_model'], document_links)}), 200
 
 
 if __name__ == '__main__':

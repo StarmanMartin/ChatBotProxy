@@ -31,7 +31,7 @@ def update(url, path, embedding_model):
 @click.option('--path', '-p', default=os.getenv('DOCUSAURUS_BASE_PATH'), help="Docusaurus url base path")
 @click.option('--embedding_model', '-em', default=os.getenv('EMBEDDING_MODEL'), help="Docusaurus url base path")
 def answer(url, path, embedding_model, question, llm):
-    query_ollama(question, llm, get_document_links(url, path, embedding_model))
+    query_ollama(question, llm, embedding_model, get_document_links(url, path, embedding_model))
 
 
 @cli.command(help="Serve proxy server")
