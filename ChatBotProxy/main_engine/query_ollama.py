@@ -2,8 +2,6 @@ import faiss
 import requests
 import os
 
-from sentence_transformers import SentenceTransformer
-
 __all__ = ['query_ollama']
 
 from ChatBotProxy.main_engine.import_docu import docu_root, get_embedding_model
@@ -33,13 +31,13 @@ def _build_prompt(question: str, model_name: str, embedding_model:str, doc_text_
     return {"prompt": prompt, "model": model_name, "stream": False}
 
 
-def query_ollama(question, model_name, embedding_model, doc_text_links: list[str]):
+def query_ollama(question: str, model_name: str, embedding_model: str, doc_text_links: list[str]) -> dict[str:str]:
     response = requests.post(
         "http://localhost:11434/api/generate",
         json=_build_prompt(question, model_name, embedding_model, doc_text_links)
     )
     try:
-        print(response.json().get("response"))
+        return {"answer": response.json().get("response")}
     except ValueError as e:
         print("JSON parsing error:", e)
         print("Raw response content:", response.text)
