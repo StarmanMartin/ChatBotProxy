@@ -1,6 +1,6 @@
 import os
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from flask import Flask, request, jsonify
 
 from ChatBotProxy.main_engine.import_docu import get_document_links, fetch_documents
@@ -9,7 +9,7 @@ from ChatBotProxy.main_engine.query_ollama import query_ollama
 app = Flask(__name__)
 
 # Load environment variables from the .env file
-load_dotenv()
+load_dotenv(find_dotenv(usecwd=True))
 
 # Apply configuration from environment variables
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')

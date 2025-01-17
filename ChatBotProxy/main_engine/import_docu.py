@@ -57,10 +57,10 @@ def _extract_text_from_web(url_docu):
     return re.sub(r'^\n|\n$', '', re.sub('â|Â ', '', res))
 
 def _fp(path_name: str) -> str:
-    return os.path.join(os.path.dirname(__file__), path_name)
+    return os.path.join(os.getcwd(), path_name)
 
 def docu_root() -> str:
-    return _fp('docu')
+    return _fp('chat_bot_docu_docu')
 
 def fetch_documents(url: str, base_path: str, embedding_model: str):
     links = _get_all_website_links(url, base_path)

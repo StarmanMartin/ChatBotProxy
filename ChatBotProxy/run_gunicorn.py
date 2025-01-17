@@ -1,10 +1,7 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from gunicorn.app.base import BaseApplication
 from ChatBotProxy.app import app  # Import your Flask app
-
-# Load environment variables from .env
-load_dotenv()
 
 class GunicornApp(BaseApplication):
     def __init__(self, application, options=None):
@@ -30,4 +27,6 @@ def run():
 
 
 if __name__ == '__main__':
+    # Load environment variables from .env
+    load_dotenv(find_dotenv(usecwd=True))
     run()

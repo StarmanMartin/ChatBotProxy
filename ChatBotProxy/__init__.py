@@ -1,14 +1,14 @@
 import os
 
 import click
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from ChatBotProxy.main_engine.import_docu import fetch_documents, get_document_links
 from ChatBotProxy.main_engine.query_ollama import query_ollama
 from ChatBotProxy.run_gunicorn import run
 
 # Load environment variables from the .env file
-load_dotenv()
+load_dotenv(find_dotenv(usecwd=True))
 
 
 @click.group()
