@@ -60,7 +60,7 @@ def _fp(path_name: str) -> str:
     return os.path.join(os.getcwd(), path_name)
 
 def docu_root() -> str:
-    return _fp('chat_bot_docu_docu')
+    return _fp('chat_bot_docu')
 
 def fetch_documents(url: str, base_path: str, embedding_model: str):
     links = _get_all_website_links(url, base_path)
@@ -68,8 +68,10 @@ def fetch_documents(url: str, base_path: str, embedding_model: str):
         shutil.rmtree(docu_root())
     os.makedirs(docu_root(), exist_ok=True)
     index = {'links': _DOCU_LINKS}
+    print(f'There are {len(links)}')
     text_chunks = []
-    for link in links:
+    for _idx, link in enumerate(links):
+        print(f'[{_idx}/{len(links)}] {link}')
         text = _extract_text_from_web(url + link)
         main_header = text.split('\n')[0]
         for idx, text_part in enumerate(re.split(r'\n## ', text)):
@@ -82,7 +84,7 @@ def fetch_documents(url: str, base_path: str, embedding_model: str):
             index['links'].append(file_path)
     with open(os.path.join(docu_root(), 'index.json'), 'w+') as f:
         f.write(json.dumps(index))
-
+    print(f'docu chunks path {docu_root()}')
     # Load pre-trained model
     model = get_embedding_model(embedding_model)# Lightweight and efficient
 
@@ -98,7 +100,9 @@ def fetch_documents(url: str, base_path: str, embedding_model: str):
     index.add(embeddings_np)
 
     # Save the index for later use
-    faiss.write_index(index, os.path.join(docu_root(), "faiss_index.bin"))
+    idx_bin_path = os.path.join(docu_root(), "faiss_index.bin")
+    faiss.write_index(index, idx_bin_path)
+    print(f'FAiSS idx path {idx_bin_path}')
 
 
 def get_document_links(url: str, base_path: str, embedding_model: str):

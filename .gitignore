@@ -170,4 +170,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 /.env
-/chat_bot_docu_docu/
+/chat_bot_docu/
