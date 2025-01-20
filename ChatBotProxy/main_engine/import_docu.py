@@ -120,10 +120,16 @@ class ContextManager(metaclass=ThreadSafeSingleton):
     def _handle_long_text_chunk(self, link: str, text: str, log_handler: Callable[[str,dict],None] | None = None):#
         main_header = text.split('\n')[0]
         text_chunks = []
+        new_text = ''
         for idx, text_part in enumerate(re.split(r'\n## ', text)):
-            text_part = main_header + '\n## ' + text_part.strip('#')
+            if new_text == '':
+                new_text = main_header + '\n## ' + text_part.strip('#')
+            else:
+                new_text += '\n' + text_part.strip('#')
             fn = self._make_file_name(link, idx)
-            text_chunks += self._handle_text_chunk(fn, text_part, log_handler)
+            if len(new_text) > 5000:
+                text_chunks += self._handle_text_chunk(fn, new_text, log_handler)
+                new_text = ''
         return text_chunks
 
     def fetch_documents(self, log_handler: Callable[[str,dict],None] | None = None):
@@ -137,7 +143,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         for _idx, link in enumerate(links):
             log_handler and log_handler('links',  {'text': f'[{_idx+1}/{len(links)}] {link}', 'idx': _idx})
             text = self._extract_text_from_web(link)
-            if len(text) > 5000:
+            if len(text) > 10000:
                 text_chunks += self._handle_long_text_chunk(link, text, log_handler)
             else:
                 text_chunks += self._handle_text_chunk(link, text, log_handler)
