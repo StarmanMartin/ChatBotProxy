@@ -121,6 +121,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         main_header = text.split('\n')[0]
         text_chunks = []
         new_text = ''
+        fn = '__.txt'
         for idx, text_part in enumerate(re.split(r'\n## ', text)):
             if new_text == '':
                 new_text = main_header + '\n## ' + text_part.strip('#')
@@ -130,6 +131,8 @@ class ContextManager(metaclass=ThreadSafeSingleton):
             if len(new_text) > 5000:
                 text_chunks += self._handle_text_chunk(fn, new_text, log_handler)
                 new_text = ''
+        if new_text != '':
+            text_chunks += self._handle_text_chunk(fn, new_text, log_handler)
         return text_chunks
 
     def fetch_documents(self, log_handler: Callable[[str,dict],None] | None = None):
