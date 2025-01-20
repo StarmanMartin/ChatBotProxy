@@ -28,7 +28,7 @@ Commands:
 - answer  Ask ollama<br>
   Args:
   - -q, --question | TEXT | Question to be answered
-  - --llm | TEXT | LLM model name
+  - --llm_model, -llm | TEXT | LLM model name
   - -u, --url | TEXT | Docusaurus url
   - -p, --path | TEXT | Docusaurus url base path
   - -em, --embedding_model | TEXT | FIASS model
@@ -37,6 +37,7 @@ Commands:
 - update  Fetch and update documentation of Chemotion<br>
   Args:
     - -em, --embedding_model | TEXT | FIASS model
+    - --llm_model, -llm | TEXT | LLM model name
     - -u, --url | TEXT | Docusaurus url
     - -p, --path | TEXT  | Docusaurus url base path
     - --help        ->            Show this message and exit.

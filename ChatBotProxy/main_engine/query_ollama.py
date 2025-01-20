@@ -1,10 +1,10 @@
 import faiss
-import requests
+from ChatBotProxy.main_engine.utils import query_ollama as ql
 import os
 
-__all__ = ['query_ollama']
+__all__ = ['query_ollama', 'build_question_prompt']
 
-from ChatBotProxy.main_engine.import_docu import docu_root, get_embedding_model
+from ChatBotProxy.main_engine.import_docu import ContextManager
 
 def search_index(query, index, model, doc_text_links: list[str], top_k=10):
     """Search the FAISS index with a query and return top_k results."""
@@ -17,29 +17,19 @@ def search_index(query, index, model, doc_text_links: list[str], top_k=10):
     return results
 
 
-def _build_prompt(question: str, model_name: str, embedding_model:str, doc_text_links: list[str]):
-    model = get_embedding_model(embedding_model)
+def build_question_prompt(question: str):
+    model = ContextManager().get_embedding_model()
     # Save the index for later use
-    index = faiss.read_index(os.path.join(docu_root(), "faiss_index.bin"))
+    index = faiss.read_index(os.path.join(ContextManager().docu_root(), "faiss_index.bin"))
 
     # Search FAISS index
-    results = search_index(question, index, model, doc_text_links, top_k=10)
+    results = search_index(question, index, model, ContextManager().get_document_links(), top_k=10)
 
     context = "\n".join([r[0] for r in results])
     # Command to send the POST request on the remote server
-    prompt = f"Based on the following context, answer the question:\n\nContext: {context}\n\nQuestion: {question}"
-    return {"prompt": prompt, "model": model_name, "stream": False}
+    prompt = f"Based on the following context, answer the question about Chemotion:\n\nContext: {context}\n\nQuestion: {question}"
+    return prompt
 
 
-def query_ollama(question: str, model_name: str, embedding_model: str, doc_text_links: list[str]) -> dict[str:str]:
-    response = requests.post(
-        "http://localhost:11434/api/generate",
-        json=_build_prompt(question, model_name, embedding_model, doc_text_links)
-    )
-    try:
-        return {"answer": response.json().get("response")}
-    except ValueError as e:
-        print("JSON parsing error:", e)
-        print("Raw response content:", response.text)
-        return {"error": "Invalid JSON response"}
-
+def query_ollama(prompt: str, model_name: str):
+    return ql(prompt, model_name)
