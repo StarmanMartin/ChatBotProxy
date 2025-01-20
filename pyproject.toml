@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "chatbotproxy"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Martin <m.starman@live.comdd>"]
 readme = "README.md"
