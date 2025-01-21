@@ -41,7 +41,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         self._llm = None
 
     def setup(self, embedding_model: str, base_url: str, llm: str, base_path: str = '/',
-               context_types: ContextTypes = ContextTypes.DOCUSAURUS):
+              context_types: ContextTypes = ContextTypes.DOCUSAURUS):
         self._base_url, self._base_path = base_url, base_path
         self.context_types = context_types
         self._embedding_model_name = embedding_model
@@ -77,7 +77,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
             return self._get_all_website_links(urls, idx)
         return list(dict.fromkeys(urls))
 
-    def _make_file_name(self, text, idx = None):
+    def _make_file_name(self, text, idx=None):
         if text.startswith(self._base_url):
             text = text[len(self._base_url):]
         if text.endswith('.txt'):
@@ -107,35 +107,36 @@ class ContextManager(metaclass=ThreadSafeSingleton):
     def docu_root(cls) -> str:
         return cls._fp('chat_bot_docu')
 
-    def _handle_text_chunk(self, link: str, txt: str, log_handler: Callable[[str,dict],None] | None = None):
+    def _handle_text_chunk(self, link: str, txt: str, log_handler: Callable[[str, dict], None] | None = None):
         fn = self._make_file_name(link)
         file_path = os.path.join(self.docu_root(), fn)
         txt = self._prepare_text(txt)
         with open(file_path, 'w+') as f:
             f.write(txt)
         self._docu_links.append(file_path)
-        log_handler and log_handler('links-meta', {'text': file_path})
+        log_handler and log_handler('links-meta', {'text': f"{file_path} (Length {len(txt)})"})
         return [txt]
 
-    def _handle_long_text_chunk(self, link: str, text: str, log_handler: Callable[[str,dict],None] | None = None):#
+    def _handle_long_text_chunk(self, link: str, text: str, log_handler: Callable[[str, dict], None] | None = None):  #
         main_header = text.split('\n')[0]
         text_chunks = []
-        new_text = ''
+        new_text = main_header
         fn = '__.txt'
-        for idx, text_part in enumerate(re.split(r'\n## ', text)):
-            if new_text == '':
-                new_text = main_header + '\n## ' + text_part.strip('#')
-            else:
-                new_text += '\n' + text_part.strip('#')
-            fn = self._make_file_name(link, idx)
-            if len(new_text) > 5000:
-                text_chunks += self._handle_text_chunk(fn, new_text, log_handler)
-                new_text = ''
-        if new_text != '':
-            text_chunks += self._handle_text_chunk(fn, new_text, log_handler)
+        sub_sections = re.split(r'\n## ', text)
+        for idx, text_part in enumerate(sub_sections):
+            new_text += '\n## ' + text_part.strip('#')
+
+            if len(sub_sections) - 1 == idx or len(new_text) > 1000:
+                chunk_idx = 0
+                while chunk_idx < len(new_text):
+                    fn = self._make_file_name(link, f"{idx}_{chunk_idx // 1000}")
+                    text_chunks += self._handle_text_chunk(fn, new_text[chunk_idx:chunk_idx + 1200], log_handler)
+                    chunk_idx += 1000
+                new_text = main_header
+
         return text_chunks
 
-    def fetch_documents(self, log_handler: Callable[[str,dict],None] | None = None):
+    def fetch_documents(self, log_handler: Callable[[str, dict], None] | None = None):
         links = self._get_all_website_links()
         if os.path.isdir(self.docu_root()):
             shutil.rmtree(self.docu_root())
@@ -144,18 +145,17 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         log_handler and log_handler('meta', {'len': str(len(links))})
         text_chunks = []
         for _idx, link in enumerate(links):
-            log_handler and log_handler('links',  {'text': f'[{_idx+1}/{len(links)}] {link}', 'idx': _idx})
             text = self._extract_text_from_web(link)
-            if len(text) > 10000:
+            log_handler and log_handler('links', {'text': f'[{_idx + 1}/{len(links)}] {link} (Lenght: {len(text)})',
+                                                  'idx': _idx})
+            if len(text) > 1000:
                 text_chunks += self._handle_long_text_chunk(link, text, log_handler)
             else:
                 text_chunks += self._handle_text_chunk(link, text, log_handler)
 
-
-
         with open(os.path.join(self.docu_root(), 'index.json'), 'w+') as f:
             f.write(json.dumps(index))
-        log_handler and log_handler(f'chunks_path',  {'text': self.docu_root()})
+        log_handler and log_handler(f'chunks_path', {'text': self.docu_root()})
         # Load pre-trained model
         model = self.get_embedding_model()  # Lightweight and efficient
 
@@ -168,7 +168,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         dimension = embeddings_np.shape[1]
         index = faiss.IndexFlatL2(dimension)  # L2 distance (Euclidean)
         index.add(embeddings_np)
-            # Save the index for later use
+        # Save the index for later use
         idx_bin_path = os.path.join(self.docu_root(), "faiss_index.bin")
         faiss.write_index(index, idx_bin_path)
         log_handler and log_handler(f'index', {'text': f'FAISS index path {idx_bin_path}'})
@@ -189,8 +189,8 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         return self._embedding_model
 
     def _prepare_text(self, text: str) -> str:
-        if os.getenv('ONLY_SAMPLE_ANSWER', 'f') .lower() == 'true':
-            pass # return text
+        if os.getenv('ONLY_SAMPLE_ANSWER', 'f').lower() == 'true':
+            return text
         prompt = f"Summarize the following text into a concise, high-quality paragraph while retaining key details: {text}"
         text = query_ollama(prompt, self._llm)['answer']
         prompt = f"Rewrite the following text to make it more concise and professional: {text}"
