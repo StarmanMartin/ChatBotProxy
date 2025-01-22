@@ -232,5 +232,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
     def _generate_questions(self, text: str) -> str:
         if os.getenv('ONLY_SAMPLE_ANSWER', 'f').lower() == 'true':
             return text
+        # "Generate a list of 10 realistic questions that a user of the Chemotion ELN system might ask based on this documentation.\nFor each question:\n1. Ensure it reflects practical, system-related scenarios.\n2.Provide a clear, accurate, and concise answer that an IT support staff member would typically deliver to address the query.\nMake the questions user-focused and answers professional yet accessible to someone with basic technical knowledge.\n Using the provided Chemotion ELN documentation excerpt:{context}"
+
         prompt = f"Based on the provided Chemotion ELN documentation chunk:\n\n<context>\n\n {context} \n\n</context>\n\n, generate a list of 10 realistic questions that a system user might ask. For each question, provide a clear, accurate, and concise answer that an IT support staff member would typically give in response."
         return query_ollama(prompt, self._llm)['answer']
