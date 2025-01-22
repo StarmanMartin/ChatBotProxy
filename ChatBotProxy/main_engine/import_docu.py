@@ -130,11 +130,11 @@ class ContextManager(metaclass=ThreadSafeSingleton):
 
             if len(sub_sections) - 1 == idx or len(new_text) > self._chunk_size:
                 chunk_idx = 0
-                chunk_step = self._chunk_size * 1.2 // 1
+                chunk_step = int(self._chunk_size * 1.2 // 1)
                 while chunk_idx < len(new_text):
                     fn = self._make_file_name(link, f"{idx}_{chunk_idx // self._chunk_size}")
-
-                    text_chunks += self._handle_text_chunk(fn, new_text[chunk_idx:chunk_idx + chunk_step], log_handler)
+                    chunk_end = chunk_idx + chunk_step
+                    text_chunks += self._handle_text_chunk(fn, new_text[chunk_idx:chunk_end], log_handler)
                     chunk_idx += self._chunk_size
                 new_text = main_header
 
