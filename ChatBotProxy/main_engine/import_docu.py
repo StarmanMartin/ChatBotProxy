@@ -40,7 +40,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         self._embedding_model = self._embedding_model = self._docu_links = None
         self._llm = None
 
-        self._chunk_size = os.environ.get('CHUNK_SIZE', 2000)
+        self._chunk_size = int(os.environ.get('CHUNK_SIZE', 2000))
 
     def setup(self, embedding_model: str, base_url: str, llm: str, base_path: str = '/',
               context_types: ContextTypes = ContextTypes.DOCUSAURUS):
