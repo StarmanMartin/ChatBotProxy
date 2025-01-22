@@ -40,6 +40,8 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         self._embedding_model = self._embedding_model = self._docu_links = None
         self._llm = None
 
+        self._chunk_size = os.environ.get('CHUNK_SIZE', 2000)
+
     def setup(self, embedding_model: str, base_url: str, llm: str, base_path: str = '/',
               context_types: ContextTypes = ContextTypes.DOCUSAURUS):
         self._base_url, self._base_path = base_url, base_path
@@ -48,6 +50,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         self._embedding_model = None
         self._docu_links = []
         self._llm = llm
+
 
     def _get_html_selector(self):
         if self.context_types == ContextTypes.DOCUSAURUS:
@@ -121,17 +124,18 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         main_header = text.split('\n')[0]
         text_chunks = []
         new_text = main_header
-        fn = '__.txt'
         sub_sections = re.split(r'\n## ', text)
         for idx, text_part in enumerate(sub_sections):
             new_text += '\n## ' + text_part.strip('#')
 
-            if len(sub_sections) - 1 == idx or len(new_text) > 1000:
+            if len(sub_sections) - 1 == idx or len(new_text) > self._chunk_size:
                 chunk_idx = 0
+                chunk_step = self._chunk_size * 1.2 // 1
                 while chunk_idx < len(new_text):
-                    fn = self._make_file_name(link, f"{idx}_{chunk_idx // 1000}")
-                    text_chunks += self._handle_text_chunk(fn, new_text[chunk_idx:chunk_idx + 1200], log_handler)
-                    chunk_idx += 1000
+                    fn = self._make_file_name(link, f"{idx}_{chunk_idx // self._chunk_size}")
+
+                    text_chunks += self._handle_text_chunk(fn, new_text[chunk_idx:chunk_idx + chunk_step], log_handler)
+                    chunk_idx += self._chunk_size
                 new_text = main_header
 
         return text_chunks
@@ -148,7 +152,7 @@ class ContextManager(metaclass=ThreadSafeSingleton):
             text = self._extract_text_from_web(link)
             log_handler and log_handler('links', {'text': f'[{_idx + 1}/{len(links)}] {link} (Lenght: {len(text)})',
                                                   'idx': _idx})
-            if len(text) > 1000:
+            if len(text) > self._chunk_size:
                 text_chunks += self._handle_long_text_chunk(link, text, log_handler)
             else:
                 text_chunks += self._handle_text_chunk(link, text, log_handler)

@@ -63,6 +63,11 @@ FLASK_DEBUG=True
 SECRET_KEY=your_secret_key
 HOST=0.0.0.0
 PORT=8000
+
+CHUNK_SIZE=2500
+
+#Only needed for testting
+ONLY_SAMPLE_ANSWER=True
 ```
 
 ### Option 1
