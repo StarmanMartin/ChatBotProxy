@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ChatBotProxy</title>
+
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+            integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+            crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        let socket = io();
+        socket.on('connect', () => {
+        });
+        socket.on('meda_data', (data) => {
+            const element = document.createElement('p');
+            element.textContent = `Number of links: ${data.links_len}`;
+            document.getElementById('meta-data-container').appendChild(element);
+        });
+        socket.on('links', (data) => {
+            const element = document.createElement('li');
+            element.textContent = data.text
+            element.id = `li-for-idx-${data.idx}`
+            document.getElementById('links-done-container').appendChild(element);
+            document.getElementById('links-done-process').textContent = data.text;
+            window.scrollTo(0, 0);
+        });
+        socket.on('index', (data) => {
+            const element = document.createElement('p');
+            element.textContent = data.text
+            document.getElementById('meta-data-container').appendChild(element);
+            document.getElementById('sub-header').remove();
+        });
+        socket.on('links-meta', (data) => {
+            const element = document.createElement('p');
+            element.style.color = '#ccc';
+            element.textContent = data.text
+            document.querySelector('#links-done-container li:last-child').appendChild(element);
+        });
+        socket.on('generate_questions', (data) => {
+            const element = document.createElement('li');
+            element.textContent = data.text
+            document.getElementById('question-done-container').appendChild(element);
+            document.getElementById('links-done-process').textContent = data.text;
+            window.scrollTo(0, 0);
+        });
+
+
+    </script>
+</head>
+<body>
+<h2>Generating Q & A</h2>
+<h3 id="sub-header">{{header}}. LOADING...</h3>
+<p id="links-done-process"></p>
+<ul id="question-done-container"></ul>
+<p id="meta-data-container"></p>
+<ul id="links-done-container"></ul>
+</body>
+</html>

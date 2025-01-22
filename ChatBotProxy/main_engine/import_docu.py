@@ -160,22 +160,29 @@ class ContextManager(metaclass=ThreadSafeSingleton):
         with open(os.path.join(self.docu_root(), 'index.json'), 'w+') as f:
             f.write(json.dumps(index))
         log_handler and log_handler(f'chunks_path', {'text': self.docu_root()})
-        # Load pre-trained model
-        model = self.get_embedding_model()  # Lightweight and efficient
+        self._index_chunks(log_handler, text_chunks)
 
-        # Generate embeddings
-        embeddings = model.encode(text_chunks, convert_to_tensor=True)
+    def index_chunks(self, log_handler):
+        text_chunks = []
+        for dl in self.get_document_links():
+            with open(dl, 'r') as f:
+                text_chunks.append(f.read())
+        self._index_chunks(log_handler, text_chunks)
 
-        # Convert embeddings to numpy array
-        embeddings_np = embeddings.cpu().detach().numpy()
-        # Create a FAISS index
-        dimension = embeddings_np.shape[1]
-        index = faiss.IndexFlatL2(dimension)  # L2 distance (Euclidean)
-        index.add(embeddings_np)
-        # Save the index for later use
-        idx_bin_path = os.path.join(self.docu_root(), "faiss_index.bin")
-        faiss.write_index(index, idx_bin_path)
-        log_handler and log_handler(f'index', {'text': f'FAISS index path {idx_bin_path}'})
+    def generate_questions(self, log_handler):
+        q_root = os.path.join(self.docu_root(), 'questions')
+        shutil.rmtree(q_root, ignore_errors=True)
+        os.makedirs(q_root, exist_ok=True)
+        for dl in self.get_document_links():
+            log_handler and log_handler(f'generate_questions', {'text': f'Generateing questions for: {dl}'})
+            with open(dl, 'r') as f:
+                question_chunk = self._generate_questions(f.read())
+            log_handler and log_handler(f'generated_questions', {'text': question_chunk})
+            q_file_path = os.path.join(q_root, os.path.basename(dl))
+            with open(q_file_path, 'w+') as f:
+                f.write(question_chunk)
+
+
 
     def get_document_links(self):
         if len(self._docu_links) == 0:
@@ -192,16 +199,38 @@ class ContextManager(metaclass=ThreadSafeSingleton):
             self._embedding_model = SentenceTransformer(self._embedding_model_name)
         return self._embedding_model
 
+    def _index_chunks(self, log_handler, text_chunks):
+        # Load pre-trained model
+        model = self.get_embedding_model()  # Lightweight and efficient
+        # Generate embeddings
+        embeddings = model.encode(text_chunks, convert_to_tensor=True)
+        # Convert embeddings to numpy array
+        embeddings_np = embeddings.cpu().detach().numpy()
+        # Create a FAISS index
+        dimension = embeddings_np.shape[1]
+        index = faiss.IndexFlatL2(dimension)  # L2 distance (Euclidean)
+        index.add(embeddings_np)
+        # Save the index for later use
+        idx_bin_path = os.path.join(self.docu_root(), "faiss_index.bin")
+        faiss.write_index(index, idx_bin_path)
+        log_handler and log_handler(f'index', {'text': f'FAISS index path {idx_bin_path}'})
+
     def _prepare_text(self, text: str) -> str:
         if os.getenv('ONLY_SAMPLE_ANSWER', 'f').lower() == 'true':
             return text
         prompt = f"The following text is the documentation chunk for the Chemotion ELN. Summarize the following text into a concise, high-quality text while retaining key details: {text}"
-        text = query_ollama(prompt, self._llm)['answer']
+        text = query_ollama(prompt, self._llm, False)['answer']
         prompt = f"Rewrite the following text to be scientifically sound such that it give a clear information to its reader: {text}"
-        text = query_ollama(prompt, self._llm)['answer']
+        text = query_ollama(prompt, self._llm, False)['answer']
         prompt = f"Does the following text need more context or additional details? If yes, suggest improvements: {text}"
-        text = query_ollama(prompt, self._llm)['answer']
+        text = query_ollama(prompt, self._llm, False)['answer']
         prompt = f"Eliminate redundant information from the following text while preserving meaning: {text}"
-        text = query_ollama(prompt, self._llm)['answer']
+        text = query_ollama(prompt, self._llm, False)['answer']
         prompt = f"Include missing domain knowledge: {text}"
+        return query_ollama(prompt, self._llm, False)['answer']
+
+    def _generate_questions(self, text: str) -> str:
+        if os.getenv('ONLY_SAMPLE_ANSWER', 'f').lower() == 'true':
+            return text
+        prompt = f"Based on the provided Chemotion ELN documentation chunk:\n\n<context>\n\n {context} \n\n</context>\n\n, generate a list of 10 realistic questions that a system user might ask. For each question, provide a clear, accurate, and concise answer that an IT support staff member would typically give in response."
         return query_ollama(prompt, self._llm)['answer']

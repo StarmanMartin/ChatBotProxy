@@ -16,6 +16,36 @@ def cli():
     pass
 
 
+
+def print_update(method_type: str, value: dict):
+    if method_type == 'meta':
+        click.echo(f"Number of all links: {value['len']}")
+    if method_type in ['links', 'index', 'links-meta', 'generate_questions', 'generated_questions']:
+        click.echo(f"{method_type} -> {value['text']}")
+
+
+@cli.command(help="Generate questions for the documentation of Chemotion")
+@click.option('--url', '-u', default=os.getenv('DOCUSAURUS_URL'), help="Docusaurus url")
+@click.option('--path', '-p', default=os.getenv('DOCUSAURUS_BASE_PATH'), help="Docusaurus url base path")
+@click.option('--embedding_model', '-em', default=os.getenv('EMBEDDING_MODEL'), help="Docusaurus url base path")
+@click.option('--llm_model', '-llm', default=os.getenv('LLM_MODEL'), help="Docusaurus url base path")
+def questions(url, path, embedding_model, llm_model):
+    ContextManager().setup(embedding_model, url, llm_model, path)
+
+    ContextManager().generate_questions(print_update)
+
+
+@cli.command(help="FAISS index documentation of Chemotion")
+@click.option('--url', '-u', default=os.getenv('DOCUSAURUS_URL'), help="Docusaurus url")
+@click.option('--path', '-p', default=os.getenv('DOCUSAURUS_BASE_PATH'), help="Docusaurus url base path")
+@click.option('--embedding_model', '-em', default=os.getenv('EMBEDDING_MODEL'), help="Docusaurus url base path")
+@click.option('--llm_model', '-llm', default=os.getenv('LLM_MODEL'), help="Docusaurus url base path")
+def index(url, path, embedding_model, llm_model):
+    ContextManager().setup(embedding_model, url, llm_model, path)
+
+    ContextManager().index_chunks(print_update)
+
+
 @cli.command(help="Fetch and update documentation of Chemotion")
 @click.option('--url', '-u', default=os.getenv('DOCUSAURUS_URL'), help="Docusaurus url")
 @click.option('--path', '-p', default=os.getenv('DOCUSAURUS_BASE_PATH'), help="Docusaurus url base path")
@@ -23,12 +53,6 @@ def cli():
 @click.option('--llm_model', '-llm', default=os.getenv('LLM_MODEL'), help="Docusaurus url base path")
 def update(url, path, embedding_model, llm_model):
     ContextManager().setup(embedding_model, url, llm_model, path)
-
-    def print_update(method_type: str, value: dict):
-        if method_type == 'meta':
-            click.echo(f"Number of all links: {value['len']}")
-        if method_type in ['links', 'index', 'links-meta']:
-            click.echo(f"{method_type} -> {value['text']}")
 
     ContextManager().fetch_documents(print_update)
 

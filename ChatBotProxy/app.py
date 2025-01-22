@@ -30,23 +30,50 @@ ContextManager().setup(config['embedding_model'], config['url'], config['llm'], 
 MAIN_DOCU_THREAD = None
 
 
+
+
+def send_update(method_type: str, value: dict):
+    if method_type == 'meta':
+        socketio.emit('meda_data', {'links_len': value['len']})
+    if method_type in ['links', 'index', 'links-meta', 'generate_questions', 'generated_questions']:
+        socketio.emit(method_type, value)
+
 @app.route('/update', methods=['GET'])
 def handle_update():
     global MAIN_DOCU_THREAD
     if MAIN_DOCU_THREAD is not None and MAIN_DOCU_THREAD.is_alive():
         return render_template("index.html", header="Process is already running")
 
-
-    def send_update(method_type: str, value: dict):
-        if method_type == 'meta':
-            socketio.emit('meda_data', {'links_len': value['len']})
-        if method_type in ['links', 'index', 'links-meta']:
-            socketio.emit(method_type, value)
-
     MAIN_DOCU_THREAD = Thread(target=ContextManager().fetch_documents, args=(send_update,))
     MAIN_DOCU_THREAD.daemon = True
     MAIN_DOCU_THREAD.start()
     return render_template("index.html", header="Starting new process")
+
+
+
+@app.route('/index_chunks', methods=['GET'])
+def index_chunks():
+    global MAIN_DOCU_THREAD
+    if MAIN_DOCU_THREAD is not None and MAIN_DOCU_THREAD.is_alive():
+        return render_template("index.html", header="Process is already running")
+
+    MAIN_DOCU_THREAD = Thread(target=ContextManager().index_chunks, args=(send_update,))
+    MAIN_DOCU_THREAD.daemon = True
+    MAIN_DOCU_THREAD.start()
+    return render_template("index.html", header="Starting new process")
+
+
+
+@app.route('/generate_questions', methods=['GET'])
+def generate_questions():
+    global MAIN_DOCU_THREAD
+    if MAIN_DOCU_THREAD is not None and MAIN_DOCU_THREAD.is_alive():
+        return render_template("index_questions.html", header="Process is already running")
+
+    MAIN_DOCU_THREAD = Thread(target=ContextManager().generate_questions, args=(send_update,))
+    MAIN_DOCU_THREAD.daemon = True
+    MAIN_DOCU_THREAD.start()
+    return render_template("index_questions.html", header="Starting new process")
 
 
 @app.route('/chat', methods=['POST'])
