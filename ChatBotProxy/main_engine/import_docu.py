@@ -195,11 +195,13 @@ class ContextManager(metaclass=ThreadSafeSingleton):
     def _prepare_text(self, text: str) -> str:
         if os.getenv('ONLY_SAMPLE_ANSWER', 'f').lower() == 'true':
             return text
-        prompt = f"Summarize the following text into a concise, high-quality paragraph while retaining key details: {text}"
+        prompt = f"The following text is the documentation chunk for the Chemotion ELN. Summarize the following text into a concise, high-quality text while retaining key details: {text}"
         text = query_ollama(prompt, self._llm)['answer']
-        prompt = f"Rewrite the following text to make it more concise and professional: {text}"
+        prompt = f"Rewrite the following text to be scientifically sound such that it give a clear information to its reader: {text}"
         text = query_ollama(prompt, self._llm)['answer']
         prompt = f"Does the following text need more context or additional details? If yes, suggest improvements: {text}"
         text = query_ollama(prompt, self._llm)['answer']
         prompt = f"Eliminate redundant information from the following text while preserving meaning: {text}"
+        text = query_ollama(prompt, self._llm)['answer']
+        prompt = f"Include missing domain knowledge: {text}"
         return query_ollama(prompt, self._llm)['answer']
